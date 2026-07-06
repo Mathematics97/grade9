@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Theory Workbook — LCM · HCF · Primes · Rounding</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root{
+  --ink:#1E2A3A;
+  --paper:#F7F3E9;
+  --paper-line:#E4DCC6;
+  --teal:#2F7A6F;
+  --teal-deep:#1F5951;
+  --amber:#E3A62F;
+  --coral:#D65F53;
+  --graphite:#33363B;
+  --card:#FFFFFF;
+  --shadow: 0 1px 2px rgba(30,42,58,0.06), 0 4px 14px rgba(30,42,58,0.06);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(circle at 1px 1px, var(--paper-line) 1px, transparent 1px) 0 0/22px 22px,
+    var(--paper);
+  color:var(--graphite);
+  font-family:'Space Grotesk', sans-serif;
+  padding:0 0 80px 0;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+}
+
+/* ---------- HEADER ---------- */
+header{
+  max-width:920px;
+  margin:0 auto;
+  padding:40px 24px 20px;
+}
+.eyebrow{
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--teal-deep);
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.eyebrow::before{
+  content:"";
+  width:8px;height:8px;border-radius:50%;
+  background:var(--amber);
+  display:inline-block;
+}
+h1{
+  font-family:'Fraunces', serif;
+  font-optical-sizing:auto;
+  font-weight:700;
+  font-size:clamp(32px,5vw,52px);
+  line-height:1.02;
+  margin:10px 0 6px;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+.subtitle{
+  font-size:16px;
+  color:#5b5f66;
+  max-width:60ch;
+  line-height:1.5;
+  margin-bottom:26px;
+}
+.tree-icon{width:54px;height:54px;flex-shrink:0;}
+
+/* ---------- RULER PROGRESS ---------- */
+.ruler-wrap{
+  max-width:920px;
+  margin:0 auto 8px;
+  padding:0 24px;
+}
+.ruler{
+  position:relative;
+  height:54px;
+  background:var(--card);
+  border:1px solid var(--paper-line);
+  border-radius:10px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.ruler-fill{
+  position:absolute;
+  top:0; left:0; bottom:0;
+  width:0%;
+  background:linear-gradient(90deg, var(--teal) 0%, var(--teal-deep) 100%);
+  transition:width 0.5s cubic-bezier(.4,0,.2,1);
+}
+.ruler-ticks{
+  position:absolute; inset:0;
+  display:flex;
+}
+.tick{
+  flex:1;
+  border-right:1px solid rgba(30,42,58,0.08);
+  position:relative;
+}
+.tick:last-child{border-right:none;}
+.tick.major::after{
+  content:attr(data-n);
+  position:absolute;
+  bottom:4px; left:50%;
+  transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  color:rgba(30,42,58,0.35);
+}
+.tick.done::after{ color:#fff; }
+.ruler-caption{
+  display:flex; justify-content:space-between;
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:#8a8d92;
+  margin:8px 2px 24px;
+}
+#scoreText{color:var(--teal-deep); font-weight:600;}
+
+/* ---------- TABS ---------- */
+.tabs{
+  max-width:920px;
+  margin:0 auto 28px;
+  padding:0 24px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.tab{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight:600;
+  font-size:14px;
+  padding:10px 18px;
+  border-radius:999px;
+  border:1px solid var(--paper-line);
+  background:var(--card);
+  color:var(--ink);
+  cursor:pointer;
+  display:flex; align-items:center; gap:8px;
+  transition:background .15s, color .15s, border-color .15s, transform .1s;
+}
+.tab .count{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  background:rgba(30,42,58,0.07);
+  padding:2px 7px;
+  border-radius:999px;
+}
+.tab:hover{transform:translateY(-1px);}
+.tab.active{
+  background:var(--ink);
+  color:var(--paper);
+  border-color:var(--ink);
+}
+.tab.active .count{background:rgba(247,243,233,0.18); color:var(--paper);}
+
+/* ---------- MAIN / QUESTIONS ---------- */
+main{max-width:920px; margin:0 auto; padding:0 24px;}
+.topic-panel{display:none;}
+.topic-panel.active{display:block;}
+.topic-intro{
+  font-size:14px;
+  color:#5b5f66;
+  border-left:3px solid var(--amber);
+  padding-left:14px;
+  margin-bottom:22px;
+  max-width:65ch;
+}
+
+.qcard{
+  background:var(--card);
+  border:1px solid var(--paper-line);
+  border-radius:14px;
+  box-shadow:var(--shadow);
+  padding:22px 24px;
+  margin-bottom:18px;
+}
+.qhead{
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  margin-bottom:14px;
+}
+.qnum{
+  font-family:'Fraunces', serif;
+  font-weight:700;
+  font-size:22px;
+  color:var(--teal-deep);
+  background:rgba(47,122,111,0.09);
+  min-width:38px; height:38px;
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.qtext{
+  font-size:15.5px;
+  line-height:1.55;
+  padding-top:4px;
+  color:var(--ink);
+}
+.qtext b{color:var(--teal-deep);}
+.difficulty{
+  font-family:'JetBrains Mono', monospace;
+  font-size:10px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--coral);
+  border:1px solid var(--coral);
+  padding:2px 7px;
+  border-radius:999px;
+  margin-left:auto;
+  flex-shrink:0;
+  white-space:nowrap;
+}
+
+.fields{display:flex; flex-direction:column; gap:10px; margin:14px 0 6px;}
+.field-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.field-row label{font-size:13px; color:#5b5f66; min-width:150px; font-family:'JetBrains Mono',monospace;}
+.field-row input{
+  font-family:'JetBrains Mono', monospace;
+  font-size:14.5px;
+  padding:9px 12px;
+  border-radius:8px;
+  border:1.5px solid var(--paper-line);
+  background:#fdfcf9;
+  min-width:150px;
+  flex:1;
+  max-width:260px;
+  transition:border-color .15s;
+}
+.field-row input:focus{outline:none; border-color:var(--teal);}
+.field-row input.correct{border-color:var(--teal); background:rgba(47,122,111,0.07);}
+.field-row input.wrong{border-color:var(--coral); background:rgba(214,95,83,0.06);}
+.field-icon{width:18px; text-align:center; font-size:15px;}
+
+.qactions{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;}
+button.check-btn{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight:600;
+  font-size:13.5px;
+  background:var(--ink);
+  color:var(--paper);
+  border:none;
+  padding:9px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:background .15s, transform .1s;
+}
+button.check-btn:hover{background:var(--teal-deep);}
+button.check-btn:active{transform:scale(0.97);}
+button.link-btn{
+  background:none; border:none;
+  font-family:'JetBrains Mono', monospace;
+  font-size:12.5px;
+  color:var(--teal-deep);
+  text-decoration:underline;
+  cursor:pointer;
+  padding:4px 0;
+}
+.feedback{
+  font-size:13.5px;
+  font-weight:600;
+  min-height:18px;
+}
+.feedback.ok{color:var(--teal-deep);}
+.feedback.no{color:var(--coral);}
+
+.working{
+  display:none;
+  margin-top:14px;
+  padding:14px 16px;
+  background:#FBF9F2;
+  border:1px dashed var(--paper-line);
+  border-radius:10px;
+  font-size:14px;
+  line-height:1.65;
+  color:#3a3d43;
+}
+.working.show{display:block;}
+.working .step{margin:0 0 4px;}
+.working code{
+  font-family:'JetBrains Mono', monospace;
+  background:rgba(30,42,58,0.06);
+  padding:1px 5px;
+  border-radius:4px;
+}
+
+footer{
+  max-width:920px; margin:36px auto 0; padding:0 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:12px;
+}
+.reset-btn{
+  font-family:'JetBrains Mono', monospace;
+  font-size:12.5px;
+  background:none;
+  border:1px solid var(--paper-line);
+  color:#5b5f66;
+  padding:8px 14px;
+  border-radius:999px;
+  cursor:pointer;
+}
+.reset-btn:hover{border-color:var(--coral); color:var(--coral);}
+.foot-note{font-size:12.5px; color:#9a9da2;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">IGCSE · Grade 9 · Extended Practice</div>
+  <h1>
+    <svg class="tree-icon" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="14" r="7" fill="#1E2A3A"/>
+      <line x1="50" y1="21" x2="28" y2="42" stroke="#2F7A6F" stroke-width="2.5"/>
+      <line x1="50" y1="21" x2="72" y2="42" stroke="#2F7A6F" stroke-width="2.5"/>
+      <circle cx="28" cy="48" r="7" fill="#2F7A6F"/>
+      <circle cx="72" cy="48" r="7" fill="#2F7A6F"/>
+      <line x1="28" y1="55" x2="16" y2="76" stroke="#E3A62F" stroke-width="2.5"/>
+      <line x1="28" y1="55" x2="40" y2="76" stroke="#E3A62F" stroke-width="2.5"/>
+      <line x1="72" y1="55" x2="60" y2="76" stroke="#E3A62F" stroke-width="2.5"/>
+      <line x1="72" y1="55" x2="84" y2="76" stroke="#E3A62F" stroke-width="2.5"/>
+      <circle cx="16" cy="82" r="6" fill="#E3A62F"/>
+      <circle cx="40" cy="82" r="6" fill="#E3A62F"/>
+      <circle cx="60" cy="82" r="6" fill="#E3A62F"/>
+      <circle cx="84" cy="82" r="6" fill="#E3A62F"/>
+    </svg>
+    Number Theory Workbook
+  </h1>
+  <p class="subtitle">Twenty-one exam-style questions on LCM, HCF, prime factorisation and rounding — pitched at the tricky end of the Grade 9 syllabus. Type an answer, hit check, and pull the working if you get stuck.</p>
+</header>
+
+<div class="ruler-wrap">
+  <div class="ruler">
+    <div class="ruler-fill" id="rulerFill"></div>
+    <div class="ruler-ticks" id="rulerTicks"></div>
+  </div>
+  <div class="ruler-caption">
+    <span>0</span>
+    <span id="scoreText">0 of 21 correct</span>
+    <span>21</span>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<main id="main"></main>
+
+<footer>
+  <button class="reset-btn" id="resetBtn">↺ Reset all answers</button>
+  <span class="foot-note">Answers are checked with reasonable tolerance for rounding &amp; equivalent forms.</span>
+</footer>
+
+<script>
+const DATA = [
+{
+  id:'lcm', label:'LCM',
+  intro:'Lowest Common Multiple — prime factorisation, remainders, and "meeting again" problems.',
+  questions:[
+    {
+      text:'Find the LCM of <b>18, 24 and 30</b> using prime factorisation.',
+      difficulty:'2 marks',
+      fields:[{label:'LCM =', type:'numeric', answer:360}],
+      working:[
+        '18 = 2 × 3²',
+        '24 = 2³ × 3',
+        '30 = 2 × 3 × 5',
+        'Take the <b>highest</b> power of each prime: 2³ × 3² × 5',
+        'LCM = 8 × 9 × 5 = <code>360</code>'
+      ]
+    },
+    {
+      text:'Three bells toll at intervals of <b>20, 24 and 30 minutes</b>. They all toll together at 8:00 am. At what time will they next toll together?',
+      difficulty:'3 marks',
+      fields:[{label:'Time =', type:'text', answer:['10:00am','10:00 am','10am','10 am','10:00']}],
+      working:[
+        '20 = 2² × 5,  24 = 2³ × 3,  30 = 2 × 3 × 5',
+        'LCM = 2³ × 3 × 5 = 120 minutes = 2 hours',
+        '8:00 am + 2 hours = <code>10:00 am</code>'
+      ]
+    },
+    {
+      text:'Find the smallest number which, when divided by <b>12, 15 and 18</b>, leaves a remainder of <b>5</b> in each case.',
+      difficulty:'3 marks',
+      fields:[{label:'Number =', type:'numeric', answer:185}],
+      working:[
+        '12 = 2² × 3,  15 = 3 × 5,  18 = 2 × 3²',
+        'LCM = 2² × 3² × 5 = 180',
+        'Required number = LCM + remainder = 180 + 5 = <code>185</code>'
+      ]
+    },
+    {
+      text:'The HCF of two numbers is <b>6</b> and their LCM is <b>360</b>. If one of the numbers is <b>72</b>, find the other number.',
+      difficulty:'2 marks',
+      fields:[{label:'Other number =', type:'numeric', answer:30}],
+      working:[
+        'Rule: HCF × LCM = product of the two numbers',
+        '6 × 360 = 72 × (other number)',
+        'Other number = 2160 ÷ 72 = <code>30</code>'
+      ]
+    },
+    {
+      text:'Three runners complete one lap of a track in <b>8, 12 and 15 minutes</b> respectively. Starting together, after how many minutes will they next all be at the start together?',
+      difficulty:'2 marks',
+      fields:[{label:'Minutes =', type:'text', answer:['120','120 minutes','2 hours','120min']}],
+      working:[
+        '8 = 2³,  12 = 2² × 3,  15 = 3 × 5',
+        'LCM = 2³ × 3 × 5 = <code>120 minutes</code> (2 hours)'
+      ]
+    }
+  ]
+},
+{
+  id:'hcf', label:'HCF',
+  intro:'Highest Common Factor — greatest divisors, sharing problems, and remainder puzzles.',
+  questions:[
+    {
+      text:'Find the HCF of <b>168, 210 and 462</b> using prime factorisation.',
+      difficulty:'2 marks',
+      fields:[{label:'HCF =', type:'numeric', answer:42}],
+      working:[
+        '168 = 2³ × 3 × 7',
+        '210 = 2 × 3 × 5 × 7',
+        '462 = 2 × 3 × 7 × 11',
+        'Common primes (lowest power): 2 × 3 × 7 = <code>42</code>'
+      ]
+    },
+    {
+      text:'Find the greatest number which divides <b>245 and 1029</b>, leaving a remainder of <b>5</b> in each case.',
+      difficulty:'3 marks',
+      fields:[{label:'Number =', type:'numeric', answer:16}],
+      working:[
+        'Subtract the remainder first: 245 − 5 = 240,  1029 − 5 = 1024',
+        '240 = 2⁴ × 3 × 5,  1024 = 2¹⁰',
+        'HCF(240, 1024) = 2⁴ = <code>16</code>'
+      ]
+    },
+    {
+      text:'Three ropes of length <b>72 m, 96 m and 120 m</b> are cut into pieces of equal length with none left over. Find the greatest possible length of each piece.',
+      difficulty:'2 marks',
+      fields:[{label:'Length (m) =', type:'numeric', answer:24}],
+      working:[
+        '72 = 2³ × 3²,  96 = 2⁵ × 3,  120 = 2³ × 3 × 5',
+        'HCF = 2³ × 3 = <code>24 m</code>'
+      ]
+    },
+    {
+      text:'The HCF of two numbers is <b>12</b> and their LCM is <b>72</b>. List <b>both</b> possible pairs of numbers.',
+      difficulty:'3 marks',
+      fields:[{label:'Pairs:', type:'contains', answer:['12','24','36','72']}],
+      working:[
+        'Write numbers as 12x and 12y where x, y share no common factor (coprime) and xy = 72 ÷ 12 = 6',
+        'Coprime pairs with product 6: (1, 6) and (2, 3)',
+        'Pairs of numbers: <code>12 & 72</code>  or  <code>24 & 36</code>'
+      ]
+    },
+    {
+      text:'A charity packs <b>60 chocolates, 84 sweets and 36 toys</b> into identical gift bags using every item with none left over. Find the greatest possible number of gift bags.',
+      difficulty:'2 marks',
+      fields:[{label:'Bags =', type:'numeric', answer:12}],
+      working:[
+        '60 = 2² × 3 × 5,  84 = 2² × 3 × 7,  36 = 2² × 3²',
+        'HCF = 2² × 3 = <code>12 bags</code>'
+      ]
+    }
+  ]
+},
+{
+  id:'pf', label:'Prime Factorisation',
+  intro:'Index form, perfect powers, counting factors, and reverse problems.',
+  questions:[
+    {
+      text:'Write <b>3600</b> as a product of prime factors in index form.',
+      difficulty:'2 marks',
+      fields:[{label:'3600 =', type:'primeform', answer:{2:4,3:2,5:2}}],
+      working:[
+        '3600 = 36 × 100 = (2²×3²) × (2²×5²)',
+        '= <code>2⁴ × 3² × 5²</code>'
+      ]
+    },
+    {
+      text:'Find the smallest number by which <b>3600</b> must be multiplied to make it a perfect cube.',
+      difficulty:'3 marks',
+      fields:[{label:'Multiply by', type:'numeric', answer:60}],
+      working:[
+        '3600 = 2⁴ × 3² × 5²',
+        'For a perfect cube every index must be a multiple of 3',
+        'Need 2² more (4→6), 3¹ more (2→3), 5¹ more (2→3)',
+        'Multiply by 2² × 3 × 5 = <code>60</code>  (gives 216000 = 60³)'
+      ]
+    },
+    {
+      text:'N = 2³ × 3² × 5. Find the <b>total number of factors</b> of N (including 1 and N itself).',
+      difficulty:'2 marks',
+      fields:[{label:'Number of factors =', type:'numeric', answer:24}],
+      working:[
+        'For N = 2³ × 3² × 5¹, number of factors = (3+1)(2+1)(1+1)',
+        '= 4 × 3 × 2 = <code>24</code>'
+      ]
+    },
+    {
+      text:'If <b>2ᵃ × 3ᵇ = 972</b>, find the values of a and b.',
+      difficulty:'3 marks',
+      fields:[
+        {label:'a =', type:'numeric', answer:2},
+        {label:'b =', type:'numeric', answer:5}
+      ],
+      working:[
+        '972 ÷ 4 = 243 = 3⁵, so 972 = 2² × 3⁵',
+        '<code>a = 2, b = 5</code>'
+      ]
+    },
+    {
+      text:'Using prime factorisation, find the value of <b>√1764</b>.',
+      difficulty:'2 marks',
+      fields:[{label:'√1764 =', type:'numeric', answer:42}],
+      working:[
+        '1764 = 2² × 3² × 7²',
+        '√1764 = 2 × 3 × 7 = <code>42</code>'
+      ]
+    }
+  ]
+},
+{
+  id:'round', label:'Approximation & Rounding',
+  intro:'Significant figures, decimal places, estimation, and upper/lower bounds.',
+  questions:[
+    {
+      text:'Round <b>12.386</b> to (a) 2 decimal places, and (b) 3 significant figures.',
+      difficulty:'2 marks',
+      fields:[
+        {label:'(a) 2 d.p. =', type:'numeric', answer:12.39},
+        {label:'(b) 3 s.f. =', type:'numeric', answer:12.4}
+      ],
+      working:[
+        '(a) 12.386 → look at the 3rd decimal (6) → rounds up → <code>12.39</code>',
+        '(b) 12.386 → first 3 significant digits are 1,2,3; next digit is 8 → rounds up → <code>12.4</code>'
+      ]
+    },
+    {
+      text:'By rounding each number to 1 significant figure, estimate the value of <b>(39.7 × 5.12) ÷ 9.87</b>.',
+      difficulty:'2 marks',
+      fields:[{label:'Estimate =', type:'numeric', answer:20}],
+      working:[
+        '39.7 ≈ 40,  5.12 ≈ 5,  9.87 ≈ 10',
+        '(40 × 5) ÷ 10 = 200 ÷ 10 = <code>20</code>'
+      ]
+    },
+    {
+      text:'A length is given as <b>x = 7.5 cm</b>, correct to 2 significant figures. Write down the lower and upper bounds of x.',
+      difficulty:'2 marks',
+      fields:[
+        {label:'Lower bound =', type:'numeric', answer:7.45},
+        {label:'Upper bound =', type:'numeric', answer:7.55}
+      ],
+      working:[
+        '7.5 is accurate to the nearest 0.1, so the true value lies within half a unit either side',
+        'Lower bound = 7.5 − 0.05 = <code>7.45</code>',
+        'Upper bound = 7.5 + 0.05 = <code>7.55</code>'
+      ]
+    },
+    {
+      text:'Given that <b>a = 15.2</b> (correct to 3 s.f.) and <b>b = 0.84</b> (correct to 2 s.f.), find the maximum and minimum possible values of a ÷ b, each correct to 2 decimal places.',
+      difficulty:'3 marks',
+      fields:[
+        {label:'Max value =', type:'numeric', answer:18.26, tolerance:0.02},
+        {label:'Min value =', type:'numeric', answer:17.93, tolerance:0.02}
+      ],
+      working:[
+        'Bounds: 15.15 ≤ a < 15.25   and   0.835 ≤ b < 0.845',
+        'Maximum of a ÷ b = largest a ÷ smallest b = 15.25 ÷ 0.835 ≈ <code>18.26</code>',
+        'Minimum of a ÷ b = smallest a ÷ largest b = 15.15 ÷ 0.845 ≈ <code>17.93</code>'
+      ]
+    },
+    {
+      text:'Round <b>0.004997</b> to 2 significant figures.',
+      difficulty:'1 mark',
+      fields:[{label:'Rounded value =', type:'numeric', answer:0.005}],
+      working:[
+        'The first two significant figures are 4 and 9 (leading zeros are not counted)',
+        '0.004997 → 0.0050 → <code>0.0050</code>'
+      ]
+    },
+    {
+      text:'A number, n, is rounded to the nearest 100, giving a result of <b>3600</b>. Write down the lower and upper bounds of n.',
+      difficulty:'2 marks',
+      fields:[
+        {label:'Lower bound =', type:'numeric', answer:3550},
+        {label:'Upper bound =', type:'numeric', answer:3650}
+      ],
+      working:[
+        'Rounded to the nearest 100 means the true value is within 50 either side',
+        'Lower bound = 3600 − 50 = <code>3550</code>',
+        'Upper bound = 3600 + 50 = <code>3650</code>  (strictly n &lt; 3650)'
+      ]
+    }
+  ]
+}
+];
+
+// ---------- STATE ----------
+let totalQuestions = 0;
+DATA.forEach(t => totalQuestions += t.questions.length);
+const solvedSet = new Set(); // keys "topicIdx-qIdx"
+
+// ---------- BUILD TABS ----------
+const tabsEl = document.getElementById('tabs');
+DATA.forEach((topic, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'tab' + (i===0 ? ' active' : '');
+  btn.dataset.idx = i;
+  btn.innerHTML = topic.label + ' <span class="count">' + topic.questions.length + '</span>';
+  btn.addEventListener('click', () => switchTab(i));
+  tabsEl.appendChild(btn);
+});
+
+function switchTab(i){
+  document.querySelectorAll('.tab').forEach((t,idx)=>t.classList.toggle('active', idx===i));
+  document.querySelectorAll('.topic-panel').forEach((p,idx)=>p.classList.toggle('active', idx===i));
+}
+
+// ---------- BUILD MAIN PANELS ----------
+const main = document.getElementById('main');
+DATA.forEach((topic, ti) => {
+  const panel = document.createElement('section');
+  panel.className = 'topic-panel' + (ti===0 ? ' active' : '');
+  panel.id = 'panel-' + topic.id;
+
+  const introEl = document.createElement('p');
+  introEl.className = 'topic-intro';
+  introEl.textContent = topic.intro;
+  panel.appendChild(introEl);
+
+  topic.questions.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'qcard';
+
+    const head = document.createElement('div');
+    head.className = 'qhead';
+    head.innerHTML =
+      '<div class="qnum">' + (qi+1) + '</div>' +
+      '<div class="qtext">' + q.text + '</div>' +
+      '<div class="difficulty">' + q.difficulty + '</div>';
+    card.appendChild(head);
+
+    const fieldsWrap = document.createElement('div');
+    fieldsWrap.className = 'fields';
+    const inputEls = [];
+    q.fields.forEach((f, fi) => {
+      const row = document.createElement('div');
+      row.className = 'field-row';
+      const label = document.createElement('label');
+      label.textContent = f.label;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'your answer';
+      input.dataset.ti = ti; input.dataset.qi = qi; input.dataset.fi = fi;
+      const icon = document.createElement('span');
+      icon.className = 'field-icon';
+      row.appendChild(label);
+      row.appendChild(input);
+      row.appendChild(icon);
+      fieldsWrap.appendChild(row);
+      inputEls.push({input, icon});
+    });
+    card.appendChild(fieldsWrap);
+
+    const actions = document.createElement('div');
+    actions.className = 'qactions';
+    const checkBtn = document.createElement('button');
+    checkBtn.className = 'check-btn';
+    checkBtn.textContent = 'Check answer';
+    const workBtn = document.createElement('button');
+    workBtn.className = 'link-btn';
+    workBtn.textContent = 'Show working ▾';
+    const feedback = document.createElement('span');
+    feedback.className = 'feedback';
+    actions.appendChild(checkBtn);
+    actions.appendChild(workBtn);
+    actions.appendChild(feedback);
+    card.appendChild(actions);
+
+    const working = document.createElement('div');
+    working.className = 'working';
+    working.innerHTML = q.working.map(s => '<p class="step">' + s + '</p>').join('');
+    card.appendChild(working);
+
+    workBtn.addEventListener('click', () => {
+      working.classList.toggle('show');
+      workBtn.textContent = working.classList.contains('show') ? 'Hide working ▴' : 'Show working ▾';
+    });
+
+    checkBtn.addEventListener('click', () => {
+      let allCorrect = true;
+      q.fields.forEach((f, fi) => {
+        const val = inputEls[fi].input.value;
+        const ok = checkField(val, f);
+        inputEls[fi].input.classList.remove('correct','wrong');
+        inputEls[fi].input.classList.add(ok ? 'correct' : 'wrong');
+        inputEls[fi].icon.textContent = ok ? '✓' : '✕';
+        inputEls[fi].icon.style.color = ok ? '#2F7A6F' : '#D65F53';
+        if(!ok) allCorrect = false;
+      });
+      const key = ti + '-' + qi;
+      if(allCorrect){
+        feedback.textContent = 'Correct — nicely done.';
+        feedback.className = 'feedback ok';
+        if(!solvedSet.has(key)){ solvedSet.add(key); updateProgress(); }
+      } else {
+        feedback.textContent = 'Not quite — check each field, or reveal the working.';
+        feedback.className = 'feedback no';
+        if(solvedSet.has(key)){ solvedSet.delete(key); updateProgress(); }
+      }
+    });
+
+    panel.appendChild(card);
+  });
+
+  main.appendChild(panel);
+});
+
+// ---------- ANSWER CHECKING ----------
+function normalize(s){
+  return String(s).trim().toLowerCase().replace(/\s+/g,'');
+}
+
+function checkField(raw, f){
+  if(raw === undefined || raw === null || String(raw).trim() === '') return false;
+
+  if(f.type === 'numeric'){
+    const val = parseFloat(String(raw).replace(/,/g,''));
+    if(isNaN(val)) return false;
+    const tol = f.tolerance !== undefined ? f.tolerance : Math.max(0.01, Math.abs(f.answer)*0.005);
+    return Math.abs(val - f.answer) <= tol;
+  }
+
+  if(f.type === 'text'){
+    const n = normalize(raw);
+    return f.answer.some(a => normalize(a) === n);
+  }
+
+  if(f.type === 'contains'){
+    const n = normalize(raw);
+    return f.answer.every(token => n.includes(normalize(token)));
+  }
+
+  if(f.type === 'primeform'){
+    const n = String(raw).toLowerCase().replace(/\*\*/g,'^');
+    const re = /(\d+)\s*\^\s*(\d+)/g;
+    let m, found = {};
+    while((m = re.exec(n)) !== null){
+      found[m[1]] = parseInt(m[2],10);
+    }
+    const expected = f.answer;
+    const expKeys = Object.keys(expected);
+    if(Object.keys(found).length !== expKeys.length) return false;
+    return expKeys.every(k => found[k] === expected[k]);
+  }
+
+  return false;
+}
+
+// ---------- RULER PROGRESS ----------
+const ticksEl = document.getElementById('rulerTicks');
+for(let i=0; i<totalQuestions; i++){
+  const t = document.createElement('div');
+  t.className = 'tick' + ((i+1)%5===0 ? ' major' : '');
+  t.dataset.n = i+1;
+  ticksEl.appendChild(t);
+}
+function updateProgress(){
+  const solved = solvedSet.size;
+  const pct = (solved/totalQuestions)*100;
+  document.getElementById('rulerFill').style.width = pct + '%';
+  document.getElementById('scoreText').textContent = solved + ' of ' + totalQuestions + ' correct';
+  document.querySelectorAll('.tick').forEach((t,i)=>{
+    t.classList.toggle('done', i < Math.round((pct/100)*totalQuestions));
+  });
+}
+updateProgress();
+
+// ---------- RESET ----------
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.querySelectorAll('input').forEach(i => { i.value=''; i.classList.remove('correct','wrong'); });
+  document.querySelectorAll('.feedback').forEach(f => { f.textContent=''; f.className='feedback'; });
+  document.querySelectorAll('.field-icon').forEach(i => i.textContent='');
+  document.querySelectorAll('.working').forEach(w => w.classList.remove('show'));
+  document.querySelectorAll('.link-btn').forEach(b => b.textContent = 'Show working ▾');
+  solvedSet.clear();
+  updateProgress();
+});
+</script>
+</body>
+</html>
